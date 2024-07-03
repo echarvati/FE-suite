@@ -8,12 +8,11 @@ The work directory needs to include:
 -	initial configuration (conf.gro)
 -	the job template (t_job.sh)
 -	the templates folder 
-Then run : 
-python FE_run.py
+Then : python FE_run.py
 Available scripts
-•	FE_run.py : main script where simulation parameters and simulation workflow are defined.
-•	prepare_FE_mpd.py :  prepares the gromacs input files from available templates and defines the lambda vector.
-•	fe_manager.py : manages the calculation inputs and builds directories for each point in the lambda vector.
+•	FE_run.py: main script where simulation parameters and simulation workflow are defined.
+•	prepare_FE_mpd.py:  prepares the gromacs input files from available templates and defines the lambda vector.
+•	fe_manager.py: manages the calculation inputs and builds directories for each point in the lambda vector.
   To do
 •	add an output manager and analyzer 
 

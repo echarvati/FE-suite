@@ -41,7 +41,7 @@ def filemanager(lambdas=None, run_calc ='no' ):
                 with open('system.top') as topin:
                     contents = topin.read()
 
-                    contents = contents.replace('%workdir%', str(src))
+                    contents = contents.replace('%path%', str(src))
                 with open('system.top', 'w') as topout:
                     topout.write(contents)
 
@@ -74,6 +74,7 @@ def filemanager(lambdas=None, run_calc ='no' ):
             continue
 
 #TODO: output manager!
+#TODO: output manager!
 def manage_outputs(lambdas=None):
     dhdllogs =[]
     root = os.getcwd()
@@ -81,12 +82,21 @@ def manage_outputs(lambdas=None):
  #TODO more flexible data management!
     os.mkdir('DHDL')
     os.mkdir('LOGS')
+    os.mkdir('GROs')
+    # os.mkdir('PDBs')
+    os.mkdir('XTCs')
     dirs = os.listdir(root)
     for dir in dirs:
         if dir=='DHDL':
             dhdl_data = os.path.join(root, 'DHDL')
         elif dir=='LOGS':
             logfiles = os.path.join(root, 'LOGS')
+        elif dir == 'GROs':
+            grofiles = os.path.join(root, 'GROs')
+        # elif dir == 'LOGS':
+        #     pdbfiles = os.path.join(root, 'PDBs')
+        elif dir == 'XTCs':
+            xtcfiles = os.path.join(root, 'XTCs')
         else:
             continue
 
@@ -96,6 +106,9 @@ def manage_outputs(lambdas=None):
                 os.chdir(dir)
                 shutil.copy('dhdl.%02i.log' % i, logfiles)
                 shutil.copy('dhdl.%02i.xvg' % i, dhdl_data)
+                shutil.copy('dhdl.%02i.gro' % i, grofiles)
+                # shutil.copy('dhdl.%02i.pdb' % i, pdbfiles)
+                shutil.copy('dhdl.%02i.xtc' % i, xtcfiles)
                 print('Retrieving data from', dir)
                 os.chdir(root)
             else:
@@ -122,14 +135,30 @@ def manage_outputs(lambdas=None):
 
 
 #TODO: analyzer!
-def gmxbar(self, dhdl_data):
+def gmxbar( dhdl_data):
         datum=[]
         deltas = []
         os.chdir(dhdl_data)
         # stdoutOrigin = sys.stdout
         # sys.stdout = open("gmxlog.log", "w")
-        cmd = 'gmx_serial bar -f dhdl.*.xvg -b 400 -o bar.xvg -oi barint.xvg -oh histobar.xvg -quiet -prec 4'
+        cmd_00 = 'module purge'
+        cmd_01 = 'module load gcc/8.4.1'
+        cmd_02 = 'module load fftw/3.3.9'
+        cmd_03 = 'module load cuda/11.6'
+        cmd_04 = 'module load gromacs/2022.5'
+        cmd = 'gmx bar -f dhdl.*.xvg -b 50000000 -o bar.xvg -oi barint.xvg -oh histobar.xvg -quiet -prec 4 -xvg none | tee gmx_bar_output.log'
+        # cmd_1 = 'gracebat -hdevice JPEG -printfile barint.jpg barint.xvg'
+        # cmd_2 = 'gracebat -hdevice JPEG -printfile bar.jpg bar.xvg'
+        # cmd_3 = 'gracebat -hdevice JPEG -printfile histobar.jpg histobar.xvg'
+        os.system(cmd_00)
+        os.system(cmd_01)
+        os.system(cmd_02)
+        os.system(cmd_03)
+        os.system(cmd_04)
         os.system(cmd)
+        # os.system(cmd_1)
+        # os.system(cmd_2)
+        # os.system(cmd_3)
         # sys.stdout.close()
         # sys.stdout = stdoutOrigin
         fout = pd.read_csv('bar.xvg', skiprows=(16), header=(0), sep='\s+', names=['lambda', 'DG', 'err'])
@@ -146,7 +175,7 @@ def gmxbar(self, dhdl_data):
         # print(deltas, type(deltas))
         df_deltas = pd.DataFrame(deltas, columns=["i", "i+1", "DeltaDG", "delta_err"])
         df_deltas.to_csv("diffs.csv", index=False, sep=" ")
-        # print(df_deltas)
+
         TotDG_kT = sum(fout['DG'])
         TotDG_kcalmol = (TotDG_kT * 2.479) / 4.18
         Toterr_kT = sum(fout['err'])
